@@ -1,0 +1,33 @@
+# /etc/conf.d/oduwausd_coind: config file for /etc/init.d/oduwausd_coind
+
+# Config file location
+#ODUWAUSD_COIND_CONFIGFILE="/etc/oduwausd_coin/oduwausd_coin.conf"
+
+# What directory to write pidfile to?  (created and owned by $ODUWAUSD_COIND_USER)
+#ODUWAUSD_COIND_PIDDIR="/var/run/oduwausd_coind"
+
+# What filename to give the pidfile
+#ODUWAUSD_COIND_PIDFILE="${ODUWAUSD_COIND_PIDDIR}/oduwausd_coind.pid"
+
+# Where to write oduwausd_coind data (be mindful that the blockchain is large)
+#ODUWAUSD_COIND_DATADIR="/var/lib/oduwausd_coind"
+
+# User and group to own oduwausd_coind process
+#ODUWAUSD_COIND_USER="oduwausd_coin"
+#ODUWAUSD_COIND_GROUP="oduwausd_coin"
+
+# Path to oduwausd_coind executable
+#ODUWAUSD_COIND_BIN="/usr/bin/oduwausd_coind"
+
+# Nice value to run oduwausd_coind under
+#ODUWAUSD_COIND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+#ODUWAUSD_COIND_OPTS=""
+
+# The timeout in seconds OpenRC will wait for oduwausd_coind to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+ODUWAUSD_COIND_SIGTERM_TIMEOUT=60

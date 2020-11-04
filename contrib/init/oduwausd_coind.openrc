@@ -1,0 +1,92 @@
+#!/sbin/openrc-run
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/oduwausd_coin/.oduwausd_coin" ]; then
+	ODUWAUSD_COIND_DEFAULT_DATADIR="/var/lib/oduwausd_coin/.oduwausd_coin"
+else
+	ODUWAUSD_COIND_DEFAULT_DATADIR="/var/lib/oduwausd_coind"
+fi
+
+ODUWAUSD_COIND_CONFIGFILE=${ODUWAUSD_COIND_CONFIGFILE:-/etc/oduwausd_coin/oduwausd_coin.conf}
+ODUWAUSD_COIND_PIDDIR=${ODUWAUSD_COIND_PIDDIR:-/var/run/oduwausd_coind}
+ODUWAUSD_COIND_PIDFILE=${ODUWAUSD_COIND_PIDFILE:-${ODUWAUSD_COIND_PIDDIR}/oduwausd_coind.pid}
+ODUWAUSD_COIND_DATADIR=${ODUWAUSD_COIND_DATADIR:-${ODUWAUSD_COIND_DEFAULT_DATADIR}}
+ODUWAUSD_COIND_USER=${ODUWAUSD_COIND_USER:-${ODUWAUSD_COIN_USER:-oduwausd_coin}}
+ODUWAUSD_COIND_GROUP=${ODUWAUSD_COIND_GROUP:-oduwausd_coin}
+ODUWAUSD_COIND_BIN=${ODUWAUSD_COIND_BIN:-/usr/bin/oduwausd_coind}
+ODUWAUSD_COIND_NICE=${ODUWAUSD_COIND_NICE:-${NICELEVEL:-0}}
+ODUWAUSD_COIND_OPTS="${ODUWAUSD_COIND_OPTS:-${ODUWAUSD_COIN_OPTS}}"
+
+name="OduwaUSD Coin Daemon"
+description="OduwaUSD_Coin cryptocurrency P2P network daemon"
+
+command="/usr/bin/oduwausd_coind"
+command_args="-pid=\"${ODUWAUSD_COIND_PIDFILE}\" \
+		-conf=\"${ODUWAUSD_COIND_CONFIGFILE}\" \
+		-datadir=\"${ODUWAUSD_COIND_DATADIR}\" \
+		-daemon \
+		${ODUWAUSD_COIND_OPTS}"
+
+required_files="${ODUWAUSD_COIND_CONFIGFILE}"
+start_stop_daemon_args="-u ${ODUWAUSD_COIND_USER} \
+			-N ${ODUWAUSD_COIND_NICE} -w 2000"
+pidfile="${ODUWAUSD_COIND_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${ODUWAUSD_COIND_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${ODUWAUSD_COIND_USER}:${ODUWAUSD_COIND_GROUP}" \
+	"${ODUWAUSD_COIND_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${ODUWAUSD_COIND_USER}:${ODUWAUSD_COIND_GROUP}" \
+	"${ODUWAUSD_COIND_PIDDIR}"
+
+	checkpath -f \
+	-o ${ODUWAUSD_COIND_USER}:${ODUWAUSD_COIND_GROUP} \
+	-m 0660 \
+	${ODUWAUSD_COIND_CONFIGFILE}
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if ! grep -qs '^rpcpassword=' "${ODUWAUSD_COIND_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run oduwausd_coind."
+		eerror "The setting must appear in ${ODUWAUSD_COIND_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following "
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"OduwaUSD_Coin Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}
